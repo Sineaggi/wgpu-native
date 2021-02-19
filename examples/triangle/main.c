@@ -107,7 +107,7 @@ int main() {
             NULL}
         );
 
-    WGPUShaderModuleDescriptor source = read_file("./shader.wgsl");
+    WGPUShaderModuleDescriptor source = load_shader("./shader.wgsl");
     WGPUShaderModuleId shader = wgpu_device_create_shader_module(device, &source);
 
     WGPUBindGroupLayoutId bind_group_layout =
@@ -258,6 +258,8 @@ int main() {
 
         glfwPollEvents();
     }
+
+    free_shader(&source);
 
     glfwDestroyWindow(window);
     glfwTerminate();

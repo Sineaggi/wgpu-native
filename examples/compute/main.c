@@ -111,7 +111,7 @@ int main(
                     .bind_group_layouts = bind_group_layouts,
                     .bind_group_layouts_length = BIND_GROUP_LAYOUTS_LENGTH});
 
-    WGPUShaderModuleDescriptor source = read_file("./shader.wgsl");
+    WGPUShaderModuleDescriptor source = load_shader("./shader.wgsl");
     WGPUShaderModuleId shader_module = wgpu_device_create_shader_module(
         device,
         &source);
@@ -156,6 +156,8 @@ int main(
         times[3]);
 
     wgpu_buffer_unmap(staging_buffer);
+
+    free_shader(&source);
 
     return 0;
 }

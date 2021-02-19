@@ -3,7 +3,9 @@
 #include "wgpu.h"
 #endif
 
-WGPUShaderModuleDescriptor read_file(const char *name);
+WGPUShaderModuleDescriptor load_shader(const char *name);
+
+void free_shader(WGPUShaderModuleDescriptor *shaderModuleDescriptor);
 
 void read_buffer_map(
     WGPUBufferMapAsyncStatus status,

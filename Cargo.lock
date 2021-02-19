@@ -284,6 +284,7 @@ dependencies = [
  "arrayvec",
  "bitflags",
  "fxhash",
+ "gfx-auxil",
  "gfx-hal 0.7.0 (git+https://github.com/gfx-rs/gfx?rev=80655862ac4afc5efb6675eb9ac7c38e73544750)",
  "glow",
  "js-sys",
@@ -293,6 +294,7 @@ dependencies = [
  "naga 0.3.1 (git+https://github.com/gfx-rs/naga?tag=gfx-11)",
  "parking_lot",
  "raw-window-handle",
+ "spirv_cross",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -309,6 +311,7 @@ dependencies = [
  "copyless",
  "foreign-types",
  "fxhash",
+ "gfx-auxil",
  "gfx-hal 0.7.0 (git+https://github.com/gfx-rs/gfx?rev=80655862ac4afc5efb6675eb9ac7c38e73544750)",
  "log",
  "metal",
@@ -317,6 +320,7 @@ dependencies = [
  "parking_lot",
  "range-alloc",
  "raw-window-handle",
+ "spirv_cross",
  "storage-map",
 ]
 

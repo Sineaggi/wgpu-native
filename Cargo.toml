@@ -26,7 +26,7 @@ git = "https://github.com/gfx-rs/wgpu"
 rev = "5afe832c3c8e3417e4ad4d95f92a3f65379467ff"
 # path = "../wgpu/wgpu-core"
 version = "0.7"
-features = ["raw-window-handle", "trace"]
+features = ["raw-window-handle", "trace", "cross"]
 
 [dependencies.wgt]
 package = "wgpu-types"

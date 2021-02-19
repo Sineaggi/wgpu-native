@@ -963,8 +963,6 @@ pub unsafe extern "C" fn wgpu_device_create_render_pipeline(
         buffers: Cow::Borrowed(&buffers),
     };
 
-    println!("gotcha {:?}", desc_base.primitive.into_wgpu());
-
     let desc = wgc::pipeline::RenderPipelineDescriptor {
         label: OwnedLabel::new(desc_base.label).into_cow(),
         layout: desc_base.layout,
@@ -974,7 +972,6 @@ pub unsafe extern "C" fn wgpu_device_create_render_pipeline(
         multisample: desc_base.multisample.clone(),
         fragment: desc_base.fragment.as_ref().map(|fragment| fragment.into_wgpu()),
     };
-    println!("gotcha {:?}", desc.layout);
     let (id, _, error) = gfx_select!(device_id => GLOBAL.device_create_render_pipeline(device_id, &desc, PhantomData, None));
     if let Some(err) = error {
         panic!("{:?}", err);
@@ -1005,7 +1002,6 @@ pub extern "C" fn wgpu_device_create_compute_pipeline(
         stage: desc.stage.into_wgpu(),
     };
 
-    println!("gotcha {:?}", desc.layout);
     let (id, _, error) = gfx_select!(device_id => GLOBAL.device_create_compute_pipeline(device_id, &desc, PhantomData, None));
     if let Some(err) = error {
         panic!("{:?}", err);

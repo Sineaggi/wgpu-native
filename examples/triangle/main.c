@@ -89,7 +89,7 @@ int main() {
     WGPUAdapterId adapter = { 0 };
     wgpu_request_adapter_async(
         &(WGPURequestAdapterOptions){
-            .power_preference = WGPUPowerPreference_HighPerformance,
+            .power_preference = WGPUPowerPreference_LowPower,
             .compatible_surface = surface,
         },
         2 | 4 | 8,
@@ -106,14 +106,6 @@ int main() {
             },
             NULL}
         );
-
-    //WGPUShaderModuleDescriptor vertex_source = read_file("./../data/triangle.vert.spv");
-    //WGPUShaderModuleId vertex_shader = wgpu_device_create_shader_module(device,
-    //        &vertex_source);
-//
-    //WGPUShaderModuleDescriptor fragment_source = read_file("./../data/triangle.frag.spv");
-    //WGPUShaderModuleId fragment_shader = wgpu_device_create_shader_module(device,
-    //        &fragment_source);
 
     WGPUShaderModuleDescriptor source = read_file("./shader.wgsl");
     WGPUShaderModuleId shader = wgpu_device_create_shader_module(device, &source);
@@ -147,7 +139,6 @@ int main() {
     WGPURenderPipelineId render_pipeline =
         wgpu_device_create_render_pipeline(device,
             &(WGPURenderPipelineDescriptor){
-                .label = NULL,
                 .layout = pipeline_layout,
                 .vertex = (WGPUVertexState){
                     .stage = (WGPUProgrammableStageDescriptor) {
@@ -168,7 +159,7 @@ int main() {
                 .multisample = (WGPUMultisampleState) {
                     .alpha_to_coverage_enabled = false,
                     .count = 1,
-                    .mask = !0
+                    .mask = -1
                     },
                 .fragment = &(WGPUFragmentState) {
                     .stage = (WGPUProgrammableStageDescriptor) {

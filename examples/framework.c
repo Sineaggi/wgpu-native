@@ -26,7 +26,6 @@ WGPUShaderModuleDescriptor read_file(const char *name) {
         .s_type = WGPUSType_ShaderModuleWGSLDescriptor
     };
     wgslDescriptor->source = bytes;
-    //wgslDescriptor->code_size = length / 4;
     return (WGPUShaderModuleDescriptor) {
         .next_in_chain = (const WGPUChainedStruct *) wgslDescriptor,
         .label = NULL,

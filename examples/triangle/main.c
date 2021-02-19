@@ -89,7 +89,7 @@ int main() {
     WGPUAdapterId adapter = { 0 };
     wgpu_request_adapter_async(
         &(WGPURequestAdapterOptions){
-            .power_preference = WGPUPowerPreference_LowPower,
+            .power_preference = WGPUPowerPreference_HighPerformance,
             .compatible_surface = surface,
         },
         2 | 4 | 8,
@@ -107,13 +107,16 @@ int main() {
             NULL}
         );
 
-    WGPUShaderModuleDescriptor vertex_source = read_file("./../data/triangle.vert.spv");
-    WGPUShaderModuleId vertex_shader = wgpu_device_create_shader_module(device,
-            &vertex_source);
+    //WGPUShaderModuleDescriptor vertex_source = read_file("./../data/triangle.vert.spv");
+    //WGPUShaderModuleId vertex_shader = wgpu_device_create_shader_module(device,
+    //        &vertex_source);
+//
+    //WGPUShaderModuleDescriptor fragment_source = read_file("./../data/triangle.frag.spv");
+    //WGPUShaderModuleId fragment_shader = wgpu_device_create_shader_module(device,
+    //        &fragment_source);
 
-    WGPUShaderModuleDescriptor fragment_source = read_file("./../data/triangle.frag.spv");
-    WGPUShaderModuleId fragment_shader = wgpu_device_create_shader_module(device,
-            &fragment_source);
+    WGPUShaderModuleDescriptor source = read_file("./shader.wgsl");
+    WGPUShaderModuleId shader = wgpu_device_create_shader_module(device, &source);
 
     WGPUBindGroupLayoutId bind_group_layout =
         wgpu_device_create_bind_group_layout(device,
@@ -144,11 +147,12 @@ int main() {
     WGPURenderPipelineId render_pipeline =
         wgpu_device_create_render_pipeline(device,
             &(WGPURenderPipelineDescriptor){
+                .label = NULL,
                 .layout = pipeline_layout,
                 .vertex = (WGPUVertexState){
                     .stage = (WGPUProgrammableStageDescriptor) {
-                        .entry_point = "main",
-                        .module = vertex_shader
+                        .entry_point = "vs_main",
+                        .module = shader
                     },
                     .buffers = NULL,
                     .buffer_count = 0
@@ -156,20 +160,20 @@ int main() {
                 .primitive = (WGPUPrimitiveState) {
                     .front_face = WGPUFrontFace_Ccw,
                     .cull_mode = WGPUCullMode_None,
-                    .polygon_mode = WGPUPolygonMode_Fill, // todo: double check
+                    .polygon_mode = WGPUPolygonMode_Fill,
                     .topology = WGPUPrimitiveTopology_TriangleList,
-                    .strip_index_format = 2 // todo
+                    .strip_index_format = WGPUIndexFormat_Undefined
                     },
                 .depth_stencil = NULL,
                 .multisample = (WGPUMultisampleState) {
                     .alpha_to_coverage_enabled = false,
                     .count = 1,
-                    .mask = 0
+                    .mask = !0
                     },
                 .fragment = &(WGPUFragmentState) {
                     .stage = (WGPUProgrammableStageDescriptor) {
-                            .entry_point = "main",
-                            .module = fragment_shader
+                            .entry_point = "fs_main",
+                            .module = shader
                     },
                     .targets = &(WGPUColorTargetState) {
                         .alpha_blend = (WGPUBlendState) {

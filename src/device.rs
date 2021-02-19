@@ -881,12 +881,68 @@ impl FragmentState {
     }
 }
 
+#[repr(u32)]
+pub enum CullMode {
+    None = 0,
+    Front = 1,
+    Back = 2,
+}
+
+impl CullMode {
+    fn into_wgpu(&self) -> Option<wgt::Face> {
+        match self {
+            CullMode::None => None,
+            CullMode::Front => Some(wgt::Face::Front),
+            CullMode::Back => Some(wgt::Face::Back),
+        }
+    }
+}
+
+/*
+impl Into<Option<wgt::CompareFunction>> for CompareFunction {
+    fn into(self) -> Option<wgt::CompareFunction> {
+        match self {
+            CompareFunction::Undefined => None,
+            CompareFunction::Never => Some(wgt::CompareFunction::Never),
+            CompareFunction::Less => Some(wgt::CompareFunction::Less),
+            CompareFunction::LessEqual => Some(wgt::CompareFunction::LessEqual),
+            CompareFunction::Greater => Some(wgt::CompareFunction::Greater),
+            CompareFunction::GreaterEqual => Some(wgt::CompareFunction::GreaterEqual),
+            CompareFunction::Equal => Some(wgt::CompareFunction::Equal),
+            CompareFunction::NotEqual => Some(wgt::CompareFunction::NotEqual),
+            CompareFunction::Always => Some(wgt::CompareFunction::Less),
+        }
+    }
+}
+ */
+
+#[repr(C)]
+pub struct PrimitiveState {
+    pub topology: wgt::PrimitiveTopology,
+    pub strip_index_format: crate::IndexFormat,
+    pub front_face: wgt::FrontFace,
+    pub cull_mode: CullMode,
+    pub polygon_mode: wgt::PolygonMode,
+}
+
+impl PrimitiveState {
+    fn into_wgpu(&self) -> wgt::PrimitiveState {
+        wgt::PrimitiveState {
+            topology: self.topology,
+            strip_index_format: self.strip_index_format.into_wgpu(),
+            front_face: self.front_face,
+            cull_mode: self.cull_mode.into_wgpu(),
+            polygon_mode: self.polygon_mode,
+        }
+    }
+}
+
 #[repr(C)]
 pub struct RenderPipelineDescriptor {
     pub label: Label,
     pub layout: Option<id::PipelineLayoutId>,
     pub vertex: VertexState,
-    pub primitive: wgt::PrimitiveState,
+    pub primitive: PrimitiveState,
     pub depth_stencil: *const wgt::DepthStencilState,
     pub multisample: wgt::MultisampleState,
     pub fragment: *const FragmentState,
@@ -907,15 +963,18 @@ pub unsafe extern "C" fn wgpu_device_create_render_pipeline(
         buffers: Cow::Borrowed(&buffers),
     };
 
+    println!("gotcha {:?}", desc_base.primitive.into_wgpu());
+
     let desc = wgc::pipeline::RenderPipelineDescriptor {
         label: OwnedLabel::new(desc_base.label).into_cow(),
         layout: desc_base.layout,
         vertex,
-        primitive: desc_base.primitive.clone(),
+        primitive: desc_base.primitive.into_wgpu(),
         depth_stencil: desc_base.depth_stencil.as_ref().cloned(),
         multisample: desc_base.multisample.clone(),
         fragment: desc_base.fragment.as_ref().map(|fragment| fragment.into_wgpu()),
     };
+    println!("gotcha {:?}", desc.layout);
     let (id, _, error) = gfx_select!(device_id => GLOBAL.device_create_render_pipeline(device_id, &desc, PhantomData, None));
     if let Some(err) = error {
         panic!("{:?}", err);
@@ -946,6 +1005,7 @@ pub extern "C" fn wgpu_device_create_compute_pipeline(
         stage: desc.stage.into_wgpu(),
     };
 
+    println!("gotcha {:?}", desc.layout);
     let (id, _, error) = gfx_select!(device_id => GLOBAL.device_create_compute_pipeline(device_id, &desc, PhantomData, None));
     if let Some(err) = error {
         panic!("{:?}", err);

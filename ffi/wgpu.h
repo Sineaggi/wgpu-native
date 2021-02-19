@@ -275,23 +275,12 @@ enum WGPUCompareFunction {
 };
 typedef uint32_t WGPUCompareFunction;
 
-/**
- * Type of faces to be culled.
- */
-typedef enum WGPUCullMode {
-  /**
-   * No faces should be culled
-   */
+enum WGPUCullMode {
   WGPUCullMode_None = 0,
-  /**
-   * Front faces should be culled
-   */
   WGPUCullMode_Front = 1,
-  /**
-   * Back faces should be culled
-   */
   WGPUCullMode_Back = 2,
-} WGPUCullMode;
+};
+typedef uint32_t WGPUCullMode;
 
 /**
  * Texel mixing mode when sampling between texels.
@@ -2345,32 +2334,11 @@ typedef struct WGPUVertexState {
   uintptr_t buffer_count;
 } WGPUVertexState;
 
-/**
- * Describes the state of primitive assembly and rasterization in a render pipeline.
- */
 typedef struct WGPUPrimitiveState {
-  /**
-   * The primitive topology used to interpret vertices.
-   */
   enum WGPUPrimitiveTopology topology;
-  /**
-   * When drawing strip topologies with indices, this is the required format for the index buffer.
-   * This has no effect on non-indexed or non-strip draws.
-   */
   WGPUIndexFormat strip_index_format;
-  /**
-   * The face to consider the front for the purpose of culling and stencil operations.
-   */
   enum WGPUFrontFace front_face;
-  /**
-   * The face culling mode.
-   */
-  enum WGPUCullMode cull_mode;
-  /**
-   * Controls the way each polygon is rasterized. Can be either `Fill` (default), `Line` or `Point`
-   *
-   * Setting this to something other than `Fill` requires `Features::NON_FILL_POLYGON_MODE` to be enabled.
-   */
+  WGPUCullMode cull_mode;
   enum WGPUPolygonMode polygon_mode;
 } WGPUPrimitiveState;
 

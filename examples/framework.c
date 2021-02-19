@@ -14,20 +14,21 @@ WGPUShaderModuleDescriptor read_file(const char *name) {
     }
     fseek(file, 0, SEEK_END);
     long length = ftell(file);
-    unsigned char *bytes = malloc(length);
+    char *bytes = malloc(length + 1);
     fseek(file, 0, SEEK_SET);
     fread(bytes, 1, length, file);
     fclose(file);
+    bytes[length] = 0;
 
-    WGPUShaderModuleSPIRVDescriptor *spirvDescriptor = malloc(sizeof(WGPUShaderModuleSPIRVDescriptor));
-    spirvDescriptor->chain = (WGPUChainedStruct) {
+    WGPUShaderModuleWGSLDescriptor *wgslDescriptor = malloc(sizeof(WGPUShaderModuleWGSLDescriptor));
+    wgslDescriptor->chain = (WGPUChainedStruct) {
         .next = NULL,
-        .s_type = WGPUSType_ShaderModuleSPIRVDescriptor
+        .s_type = WGPUSType_ShaderModuleWGSLDescriptor
     };
-    spirvDescriptor->code = (uint32_t *) bytes;
-    spirvDescriptor->code_size = length / 4;
+    wgslDescriptor->source = bytes;
+    //wgslDescriptor->code_size = length / 4;
     return (WGPUShaderModuleDescriptor) {
-        .next_in_chain = (const WGPUChainedStruct *) spirvDescriptor,
+        .next_in_chain = (const WGPUChainedStruct *) wgslDescriptor,
         .label = NULL,
         .flags = WGPUShaderFlags_VALIDATION,
     };

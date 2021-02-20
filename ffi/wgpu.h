@@ -2465,11 +2465,9 @@ typedef struct WGPUMultisampleState {
 } WGPUMultisampleState;
 
 /**
- * Describes the blend state of a pipeline.
- *
- * Alpha blending is very complicated: see the OpenGL or Vulkan spec for more information.
+ * Describes the blend component of a pipeline.
  */
-typedef struct WGPUBlendState {
+typedef struct WGPUBlendComponent {
   /**
    * Multiplier for the source, which is produced by the fragment shader.
    */
@@ -2483,6 +2481,11 @@ typedef struct WGPUBlendState {
    * multiplied by their respective factors.
    */
   enum WGPUBlendOperation operation;
+} WGPUBlendComponent;
+
+typedef struct WGPUBlendState {
+  struct WGPUBlendComponent color;
+  struct WGPUBlendComponent alpha;
 } WGPUBlendState;
 
 /**
@@ -2514,26 +2517,9 @@ typedef uint32_t WGPUColorWrite;
  */
 #define WGPUColorWrite_ALL (uint32_t)15
 
-/**
- * Describes the color state of a render pipeline.
- */
 typedef struct WGPUColorTargetState {
-  /**
-   * The [`TextureFormat`] of the image that this pipeline will render to. Must match the the format
-   * of the corresponding color attachment in [`CommandEncoder::begin_render_pass`].
-   */
   enum WGPUTextureFormat format;
-  /**
-   * The alpha blending that is used for this pipeline.
-   */
-  struct WGPUBlendState alpha_blend;
-  /**
-   * The color blending that is used for this pipeline.
-   */
-  struct WGPUBlendState color_blend;
-  /**
-   * Mask which enables/disables writes to different color/alpha channel.
-   */
+  const struct WGPUBlendState *blend;
   WGPUColorWrite write_mask;
 } WGPUColorTargetState;
 

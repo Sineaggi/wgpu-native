@@ -327,26 +327,6 @@ dependencies = [
 [[package]]
 name = "gfx-backend-vulkan"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dabe88b1a5c91e0f969b441cc57e70364858066e4ba937deeb62065654ef9bd9"
-dependencies = [
- "arrayvec",
- "ash",
- "byteorder",
- "core-graphics-types",
- "gfx-hal 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "inplace_it",
- "log",
- "objc",
- "parking_lot",
- "raw-window-handle",
- "smallvec",
- "winapi",
-]
-
-[[package]]
-name = "gfx-backend-vulkan"
-version = "0.7.0"
 source = "git+https://github.com/gfx-rs/gfx?rev=80655862ac4afc5efb6675eb9ac7c38e73544750#80655862ac4afc5efb6675eb9ac7c38e73544750"
 dependencies = [
  "arrayvec",
@@ -365,15 +345,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "gfx-hal"
+name = "gfx-backend-vulkan"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1d9cc8d3b573dda62d0baca4f02e0209786e22c562caff001d77c389008781d"
+checksum = "dabe88b1a5c91e0f969b441cc57e70364858066e4ba937deeb62065654ef9bd9"
 dependencies = [
- "bitflags",
- "naga 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arrayvec",
+ "ash",
+ "byteorder",
+ "core-graphics-types",
+ "gfx-hal 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "inplace_it",
+ "log",
+ "objc",
+ "parking_lot",
  "raw-window-handle",
- "thiserror",
+ "smallvec",
+ "winapi",
 ]
 
 [[package]]
@@ -383,6 +371,18 @@ source = "git+https://github.com/gfx-rs/gfx?rev=80655862ac4afc5efb6675eb9ac7c38e
 dependencies = [
  "bitflags",
  "naga 0.3.1 (git+https://github.com/gfx-rs/naga?tag=gfx-11)",
+ "raw-window-handle",
+ "thiserror",
+]
+
+[[package]]
+name = "gfx-hal"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1d9cc8d3b573dda62d0baca4f02e0209786e22c562caff001d77c389008781d"
+dependencies = [
+ "bitflags",
+ "naga 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "raw-window-handle",
  "thiserror",
 ]
@@ -594,20 +594,6 @@ dependencies = [
 [[package]]
 name = "naga"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8f30d7036f137a2f64fd7d53b70a91545d3f09e030b77b3816ff7bd4cf3f789"
-dependencies = [
- "bit-set",
- "bitflags",
- "fxhash",
- "log",
- "num-traits",
- "thiserror",
-]
-
-[[package]]
-name = "naga"
-version = "0.3.1"
 source = "git+https://github.com/gfx-rs/naga?tag=gfx-11#539db1a317d62c8c50e21ff908cf952c731a05b6"
 dependencies = [
  "bit-set",
@@ -618,6 +604,20 @@ dependencies = [
  "petgraph",
  "serde",
  "spirv_headers",
+ "thiserror",
+]
+
+[[package]]
+name = "naga"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8f30d7036f137a2f64fd7d53b70a91545d3f09e030b77b3816ff7bd4cf3f789"
+dependencies = [
+ "bit-set",
+ "bitflags",
+ "fxhash",
+ "log",
+ "num-traits",
  "thiserror",
 ]
 

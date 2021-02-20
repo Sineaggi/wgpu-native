@@ -167,16 +167,18 @@ int main() {
                             .module = shader
                     },
                     .targets = &(WGPUColorTargetState) {
-                        .alpha_blend = (WGPUBlendState) {
-                                .src_factor = WGPUBlendFactor_One,
-                                .dst_factor = WGPUBlendFactor_Zero,
-                                .operation = WGPUBlendOperation_Add,
-                        },
-                        .color_blend = (WGPUBlendState) {
+                        .blend = &(WGPUBlendState) {
+                            .alpha = (WGPUBlendComponent) {
                                 .src_factor = WGPUBlendFactor_One,
                                 .dst_factor = WGPUBlendFactor_Zero,
                                 .operation = WGPUBlendOperation_Add,
                             },
+                            .color = (WGPUBlendComponent) {
+                                .src_factor = WGPUBlendFactor_One,
+                                .dst_factor = WGPUBlendFactor_Zero,
+                                .operation = WGPUBlendOperation_Add,
+                            }
+                        },
                         .format = WGPUTextureFormat_Bgra8Unorm,
                         .write_mask = WGPUColorWrite_ALL
                     },

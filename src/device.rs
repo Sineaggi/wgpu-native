@@ -863,9 +863,41 @@ pub struct VertexState {
 }
 
 #[repr(C)]
+pub struct BlendState {
+    pub color: wgt::BlendComponent,
+    pub alpha: wgt::BlendComponent,
+}
+
+impl BlendState {
+    fn to_wgpu(&self) -> wgt::BlendState {
+        wgt::BlendState {
+            color: self.color.clone(),
+            alpha: self.alpha.clone(),
+        }
+    }
+}
+
+#[repr(C)]
+pub struct ColorTargetState {
+    pub format: wgt::TextureFormat,
+    pub blend: *const BlendState,
+    pub write_mask: wgt::ColorWrite,
+}
+
+impl ColorTargetState {
+    fn to_wgpu(&self) -> wgt::ColorTargetState {
+        wgt::ColorTargetState {
+            format: self.format,
+            blend: unsafe { self.blend.as_ref() }.map(|blend| blend.to_wgpu()),
+            write_mask: self.write_mask,
+        }
+    }
+}
+
+#[repr(C)]
 pub struct FragmentState {
     pub stage: ProgrammableStageDescriptor,
-    pub targets: *const wgt::ColorTargetState,
+    pub targets: *const ColorTargetState,
     pub target_count: usize,
 }
 
@@ -873,10 +905,10 @@ impl FragmentState {
     unsafe fn to_wgpu(&self) -> wgc::pipeline::FragmentState {
         wgc::pipeline::FragmentState {
             stage: self.stage.to_wgpu(),
-            targets: Cow::Borrowed(make_slice(
+            targets: Cow::Owned(make_slice(
                 self.targets,
                 self.target_count,
-            ))
+            ).iter().map(|target| target.to_wgpu()).collect())
         }
     }
 }

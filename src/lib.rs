@@ -1,3 +1,7 @@
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+
 use std::borrow::Cow;
 use std::sync::Arc;
 use std::slice;
@@ -13,6 +17,8 @@ pub use self::logging::*;
 type Global = wgc::hub::Global<wgc::hub::IdentityManagerFactory>;
 
 pub type Label = *const libc::c_char;
+
+include!("bindings.rs");
 
 struct OwnedLabel(Option<String>);
 impl OwnedLabel {

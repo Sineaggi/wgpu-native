@@ -173,7 +173,7 @@ pub unsafe extern "C" fn wgpu_request_adapter_async(
 
 #[repr(C)]
 pub struct CLimits {
-    max_bind_groups: u32,
+    pub max_bind_groups: u32,
 }
 
 impl From<wgt::Limits> for CLimits {
@@ -229,12 +229,12 @@ pub struct CAdapterInfo {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct CDeviceDescriptor<'c> {
-    nextInChain: Option<&'c ChainedStruct<'c>>,
-    label: Label,
+    pub nextInChain: Option<&'c ChainedStruct<'c>>,
+    pub label: Label,
     // todo: move these to an extension
-    features: wgt::Features,
-    limits: CLimits,
-    trace_path: *const std::os::raw::c_char,
+    pub features: wgt::Features,
+    pub limits: CLimits,
+    pub trace_path: *const std::os::raw::c_char,
 }
 
 #[no_mangle]
@@ -861,14 +861,7 @@ pub extern "C" fn wgpu_shader_module_destroy(shader_module_id: id::ShaderModuleI
     gfx_select!(shader_module_id => GLOBAL.shader_module_drop(shader_module_id))
 }
 
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct CommandEncoderDescriptor<'c> {
-    pub nextInChain: Option<&'c ChainedStruct<'c>>,
-    pub label: Label,
-}
-
-impl CommandEncoderDescriptor<'_> {
+impl super::WGPUCommandEncoderDescriptor {
     fn to_wgpu(&self) -> wgt::CommandEncoderDescriptor<Label> {
         wgt::CommandEncoderDescriptor {
             label: self.label,
@@ -877,14 +870,16 @@ impl CommandEncoderDescriptor<'_> {
 }
 
 #[no_mangle]
-pub extern "C" fn wgpuDeviceCreateCommandEncoder(
-    device: id::DeviceId,
-    descriptor: &CommandEncoderDescriptor,
-) -> id::CommandEncoderId {
+pub unsafe extern "C" fn wgpuDeviceCreateCommandEncoder(
+    device: super::WGPUDevice,
+    descriptor: *const super::WGPUCommandEncoderDescriptor,
+) -> super::WGPUCommandEncoder {
+    let device: id::DeviceId = std::mem::transmute(device);
+    let descriptor = *descriptor;
     let desc = &descriptor.to_wgpu().map_label(|l| OwnedLabel::new(*l).into_cow());
-    check_error(
+    std::mem::transmute(check_error(
         gfx_select!(device => GLOBAL.device_create_command_encoder(device, desc, PhantomData)),
-    )
+    ))
 }
 
 #[no_mangle]
@@ -897,19 +892,29 @@ pub extern "C" fn wgpu_command_buffer_destroy(command_buffer_id: id::CommandBuff
     gfx_select!(command_buffer_id => GLOBAL.command_buffer_drop(command_buffer_id))
 }
 
+fn lookup_texture_format(format: u32) -> Option<wgt::TextureFormat> {
+    match format {
+        super::WGPUTextureFormat_WGPUTextureFormat_Undefined => None,
+        super::WGPUTextureFormat_WGPUTextureFormat_R8Unorm => Some(wgt::TextureFormat::R8Unorm),
+        _ => panic!("unexpected/unsupported texture format {}", format),
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpuDeviceCreateRenderBundleEncoder(
-    device: id::DeviceId,
-    descriptor: &RenderBundleEncoderDescriptor,
-) -> id::RenderBundleEncoderId {
+    device: super::WGPUDevice,
+    descriptor: *const super::WGPURenderBundleEncoderDescriptor,
+) -> super::WGPURenderBundleEncoder {
+    let device: id::DeviceId = std::mem::transmute(device);
+    let descriptor = descriptor.as_ref().expect("descriptor must not be null");
     let label = OwnedLabel::new(descriptor.label);
     let desc = wgc::command::RenderBundleEncoderDescriptor {
         label: label.as_cow(),
-        color_formats: Cow::Borrowed(make_slice(descriptor.colorFormats, descriptor.colorFormatsCount as usize)),
-        depth_stencil_format: descriptor.depthStencilFormat.as_ref().cloned(),
+        color_formats: Cow::Owned(make_slice(descriptor.colorFormats, descriptor.colorFormatsCount as usize).iter().map(|x|lookup_texture_format(*x).unwrap()).collect()),
+        depth_stencil_format: lookup_texture_format(descriptor.depthStencilFormat),
         sample_count: descriptor.sampleCount,
     };
-    check_error(GLOBAL.device_create_render_bundle_encoder(device, &desc))
+    std::mem::transmute(check_error(GLOBAL.device_create_render_bundle_encoder(device, &desc)))
 }
 
 #[no_mangle]
@@ -1195,23 +1200,135 @@ pub struct RenderPipelineDescriptor<'c> {
     pub alphaToCoverageEnabled: bool,
 }
 
+impl super::WGPUProgrammableStageDescriptor {
+    unsafe fn to_wgpu(&self) -> wgc::pipeline::ProgrammableStageDescriptor {
+        wgc::pipeline::ProgrammableStageDescriptor {
+            module: std::mem::transmute(self.module),
+            entry_point: Cow::Borrowed(std::ffi::CStr::from_ptr(self.entryPoint).to_str().unwrap()),
+        }
+    }
+}
+
+fn to_primitive_topology(s: super::WGPUPrimitiveTopology) -> wgt::PrimitiveTopology {
+    match s {
+        super::WGPUPrimitiveTopology_WGPUPrimitiveTopology_PointList => wgt::PrimitiveTopology::PointList,
+        super::WGPUPrimitiveTopology_WGPUPrimitiveTopology_LineList => wgt::PrimitiveTopology::LineList,
+        super::WGPUPrimitiveTopology_WGPUPrimitiveTopology_LineStrip =>  wgt::PrimitiveTopology::LineStrip,
+        super::WGPUPrimitiveTopology_WGPUPrimitiveTopology_TriangleList => wgt::PrimitiveTopology::TriangleList,
+        super::WGPUPrimitiveTopology_WGPUPrimitiveTopology_TriangleStrip => wgt::PrimitiveTopology::TriangleStrip,
+        _ => panic!("unsupported primitive topology {}", s),
+    }
+}
+
+fn to_front_face(s: super::WGPUFrontFace) -> wgt::FrontFace {
+    match s {
+        super::WGPUFrontFace_WGPUFrontFace_CCW => wgt::FrontFace::Ccw,
+        super::WGPUFrontFace_WGPUFrontFace_CW => wgt::FrontFace::Cw,
+        _ => panic!("unsupported front face {}", s),
+    }
+}
+
+fn to_index_format(s: super::WGPUIndexFormat) -> Option<wgt::IndexFormat> {
+    match s {
+        super::WGPUIndexFormat_WGPUIndexFormat_Undefined => None,
+        super::WGPUIndexFormat_WGPUIndexFormat_Uint16 => Some(wgt::IndexFormat::Uint16),
+        super::WGPUIndexFormat_WGPUIndexFormat_Uint32 => Some(wgt::IndexFormat::Uint32),
+        _ => panic!("unsupported index format {}", s),
+    }
+}
+
+fn to_vertex_format(s: super::WGPUVertexFormat) -> wgt::VertexFormat {
+    match s {
+        super::WGPUVertexFormat_WGPUVertexFormat_UChar2 => wgt::VertexFormat::Uchar2,
+        super::WGPUVertexFormat_WGPUVertexFormat_UChar4 => wgt::VertexFormat::Uchar4,
+        super::WGPUVertexFormat_WGPUVertexFormat_Char2 => wgt::VertexFormat::Char2,
+        super::WGPUVertexFormat_WGPUVertexFormat_Char4 => wgt::VertexFormat::Char4,
+        super::WGPUVertexFormat_WGPUVertexFormat_UChar2Norm => wgt::VertexFormat::Uchar2Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_UChar4Norm => wgt::VertexFormat::Uchar4Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_Char2Norm => wgt::VertexFormat::Char2Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_Char4Norm => wgt::VertexFormat::Char4Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_UShort2 => wgt::VertexFormat::Ushort2,
+        super::WGPUVertexFormat_WGPUVertexFormat_UShort4 => wgt::VertexFormat::Ushort4,
+        super::WGPUVertexFormat_WGPUVertexFormat_Short2 => wgt::VertexFormat::Short2,
+        super::WGPUVertexFormat_WGPUVertexFormat_Short4 => wgt::VertexFormat::Short4,
+        super::WGPUVertexFormat_WGPUVertexFormat_UShort2Norm => wgt::VertexFormat::Ushort2Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_UShort4Norm => wgt::VertexFormat::Ushort4Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_Short2Norm => wgt::VertexFormat::Short2Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_Short4Norm => wgt::VertexFormat::Short4Norm,
+        super::WGPUVertexFormat_WGPUVertexFormat_Half2 => wgt::VertexFormat::Half2,
+        super::WGPUVertexFormat_WGPUVertexFormat_Half4 => wgt::VertexFormat::Half4,
+        super::WGPUVertexFormat_WGPUVertexFormat_Float => wgt::VertexFormat::Float,
+        super::WGPUVertexFormat_WGPUVertexFormat_Float2 => wgt::VertexFormat::Float2,
+        super::WGPUVertexFormat_WGPUVertexFormat_Float3 => wgt::VertexFormat::Float3,
+        super::WGPUVertexFormat_WGPUVertexFormat_Float4 => wgt::VertexFormat::Float4,
+        super::WGPUVertexFormat_WGPUVertexFormat_UInt => wgt::VertexFormat::Uint,
+        super::WGPUVertexFormat_WGPUVertexFormat_UInt2 => wgt::VertexFormat::Uint2,
+        super::WGPUVertexFormat_WGPUVertexFormat_UInt3 => wgt::VertexFormat::Uint3,
+        super::WGPUVertexFormat_WGPUVertexFormat_UInt4 => wgt::VertexFormat::Uint4,
+        super::WGPUVertexFormat_WGPUVertexFormat_Int => wgt::VertexFormat::Int,
+        super::WGPUVertexFormat_WGPUVertexFormat_Int2 => wgt::VertexFormat::Int2,
+        super::WGPUVertexFormat_WGPUVertexFormat_Int3 => wgt::VertexFormat::Int3,
+        super::WGPUVertexFormat_WGPUVertexFormat_Int4 => wgt::VertexFormat::Int4,
+        _ => panic!("unsupported vertex format {}", s),
+    }
+}
+
+fn to_cull_mode(s: super::WGPUCullMode) -> wgt::CullMode {
+    match s {
+        super::WGPUCullMode_WGPUCullMode_None => wgt::CullMode::None,
+        super::WGPUCullMode_WGPUCullMode_Front => wgt::CullMode::Front,
+        super::WGPUCullMode_WGPUCullMode_Back => wgt::CullMode::Back,
+        _ => panic!("unsupported cull mode {}", s),
+    }
+}
+
+fn to_input_step_mode(s: super::WGPUInputStepMode) -> wgt::InputStepMode {
+    match s {
+        super::WGPUInputStepMode_WGPUInputStepMode_Vertex => wgt::InputStepMode::Vertex,
+        super::WGPUInputStepMode_WGPUInputStepMode_Instance => wgt::InputStepMode::Instance,
+        _ => panic!("unsupported index step mode {}", s),
+    }
+}
+
+impl super::WGPUVertexAttributeDescriptor {
+    fn to_wgpu(&self) -> wgt::VertexAttribute {
+        wgt::VertexAttribute {
+            format: to_vertex_format(self.format),
+            offset: self.offset,
+            shader_location: self.shaderLocation,
+        }
+    }
+}
+
+impl super::WGPUVertexBufferLayoutDescriptor {
+    unsafe fn to_wgpu(&self) -> wgc::pipeline::VertexBufferLayout {
+        wgc::pipeline::VertexBufferLayout {
+            array_stride: self.arrayStride,
+            step_mode: to_input_step_mode(self.stepMode),
+            attributes: make_slice(self.attributes, self.attributeCount as usize).iter().map(|x|x.to_wgpu()).collect(),
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpuDeviceCreateRenderPipeline(
-    device: id::DeviceId,
-    descriptor: &RenderPipelineDescriptor,
-) -> id::RenderPipelineId {
+    device: super::WGPUDevice,
+    descriptor: *const super::WGPURenderPipelineDescriptor,
+) -> super::WGPURenderPipeline {
+    let device: wgc::id::DeviceId = std::mem::transmute(device);
+    let descriptor = *descriptor;
     let desc = wgc::pipeline::RenderPipelineDescriptor {
         label: OwnedLabel::new(descriptor.label).into_cow(),
-        layout: descriptor.layout,
+        layout: descriptor.layout.as_ref().map(|x|std::mem::transmute(*x)),
         vertex: wgc::pipeline::VertexState {
             stage: descriptor.vertexStage.to_wgpu(),
             buffers: Cow::Owned(make_slice(descriptor.vertexState.vertexBuffers, descriptor.vertexState.vertexBufferCount as usize).iter().map(|x|x.to_wgpu()).collect()),
         },
         primitive: wgt::PrimitiveState {
-            topology: descriptor.primitiveTopology,
-            strip_index_format: descriptor.vertexState.indexFormat.to_wgpu(),
-            front_face: descriptor.rasterizationState.frontFace,
-            cull_mode: descriptor.rasterizationState.cullMode.to_wgpu(),
+            topology: to_primitive_topology(descriptor.primitiveTopology),
+            strip_index_format: to_index_format((*descriptor.vertexState).indexFormat),
+            front_face: to_front_face((*descriptor.rasterizationState).frontFace),
+            cull_mode: to_cull_mode((*descriptor.rasterizationState).cullMode),
             polygon_mode: descriptor.rasterizationState.polygonMode,
         },
         depth_stencil: descriptor.depthStencilState.as_ref().map(|x|x.to_wgpu(&descriptor.rasterizationState)),
@@ -1230,7 +1347,7 @@ pub unsafe extern "C" fn wgpuDeviceCreateRenderPipeline(
     if let Some(err) = error {
         panic!("{:?}", err);
     }
-    id
+    std::mem::transmute(id)
 }
 
 #[no_mangle]

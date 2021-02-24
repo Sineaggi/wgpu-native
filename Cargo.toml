@@ -46,7 +46,14 @@ libc = {version="0.2", features=[]}
 [target.'cfg(all(unix, not(target_os = "ios"), not(target_os = "macos")))'.dependencies]
 gfx-backend-vulkan = { version = "0.7", features = [] }
 
+[build-dependencies]
+bindgen = "0.57.0"
+
+[dev-dependencies]
+webgpu-sys = {path = "webgpu-sys"}
+
 [workspace]
 members = [
-	"examples/helper"
+	"examples/helper",
+	"webgpu-sys",
 ]

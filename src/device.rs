@@ -1,7 +1,7 @@
 use crate::{check_error, follow_chain, ChainedStruct, Label, OwnedLabel, SType, GLOBAL, IndexFormat, make_slice};
 
 use wgc::{
-    device::HostMap, gfx_select, hub::Token, id, pipeline::ShaderModuleSource,
+    device::HostMap, gfx_select, id, pipeline::ShaderModuleSource,
 };
 use wgt::{Backend, BackendBit, DeviceType, Limits};
 
@@ -108,20 +108,7 @@ pub extern "C" fn wgpu_create_surface_from_android(
 pub unsafe extern "C" fn wgpu_create_surface_from_metal_layer(
     layer: *mut std::ffi::c_void,
 ) -> id::SurfaceId {
-    let surface = wgc::instance::Surface {
-        #[cfg(feature = "vulkan-portability")]
-        vulkan: None, //TODO: currently requires `NSView`
-        metal: GLOBAL
-            .instance
-            .metal
-            .as_ref()
-            .map(|inst| inst.create_surface_from_layer(std::mem::transmute(layer))),
-    };
-
-    let id = GLOBAL.surfaces.process_id(PhantomData);
-    GLOBAL.surfaces.register(id, surface, &mut Token::root());
-
-    id
+    return GLOBAL.instance_create_surface_metal(layer, PhantomData);
 }
 
 #[cfg(windows)]
